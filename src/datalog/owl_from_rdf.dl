@@ -1,0 +1,231 @@
+/**
+
+RDF to OWL mapping
+
+Status: PARTIAL implementation
+
+*/
+
+#include "src/datalog/constants.dl"
+#include "src/datalog/owl_declarations.dl"
+
+.input rdf(IO=file, filename="ontology.facts")
+
+rdfList(x, [first, rest]) :- 
+    rdf(x, RDF_FIRST, first), 
+    rdf(x, RDF_REST, y),
+    y != RDF_NIL,
+    rdfList(y, rest).
+
+rdfList(x, [first, nil]) :- 
+    rdf(x, RDF_FIRST, first), 
+    rdf(x, RDF_REST, RDF_NIL).
+
+listContains(x, head) :- rdfList(x, [head, _]).
+
+listContainsRest(x, tail) :- rdfList(x, [_, tail]).
+
+listContains(x, head) :- listContainsRest(x, [head, _]).
+
+listContainsRest(x, tail) :- listContainsRest(x, [_, tail]).
+
+// Declarations
+
+Class(as(x, NamedClassNode)) :- rdf(x, RDF_TYPE, OWL_CLASS), match("<.*>", x).
+
+NamedIndividual(as(x, NamedIndividualNode)) :- rdf(x, RDF_TYPE, OWL_NAMED_INDIVIDUAL), match("<.*>", x).
+
+NamedEntity(x) :- Class(x) ; NamedIndividual(x).
+
+ObjectProperty(as(x, NamedObjectPropertyNode)) :- rdf(x, RDF_TYPE, OWL_OBJECT_PROPERTY), match("<.*>", x).
+
+// Class expressions
+
+ObjectSomeValuesFrom(as(restr, AnonymousClassExpressionNode), p, v) :-
+    rdf(restr, OWL_ON_PROPERTY, p),
+    ObjectProperty(p),
+    rdf(restr, OWL_SOME_VALUES_FROM, v),
+    ClassExpression(v),
+    rdf(restr, RDF_TYPE, OWL_RESTRICTION),
+    match("_:.*", restr).
+
+ObjectAllValuesFrom(as(restr, AnonymousClassExpressionNode), p, v) :-
+    rdf(restr, OWL_ON_PROPERTY, p),
+    ObjectProperty(p),
+    rdf(restr, OWL_ALL_VALUES_FROM, v),
+    ClassExpression(v),
+    rdf(restr, RDF_TYPE, OWL_RESTRICTION),
+    match("_:.*", restr).
+
+ObjectIntersectionOf(as(node, AnonymousClassExpressionNode), expressions) :-
+    rdf(node, OWL_INTERSECTION_OF, list),
+    rdf(node, RDF_TYPE, OWL_CLASS),
+    match("_:.*", node),
+    rdfList(list, expressions).
+
+ObjectIntersectionOf2(x, as(one, ClassExpressionNode), as(two, ClassExpressionNode)) :- ObjectIntersectionOf(x, [one, [two, nil]]).
+
+ObjectIntersectionOf3(x, as(one, ClassExpressionNode), as(two, ClassExpressionNode), as(three, ClassExpressionNode)) :- ObjectIntersectionOf(x, [one, [two, [three, nil]]]).
+
+ObjectIntersectionOf4(x, as(one, ClassExpressionNode), as(two, ClassExpressionNode), as(three, ClassExpressionNode), as(four, ClassExpressionNode)) :- ObjectIntersectionOf(x, [one, [two, [three, [four, nil]]]]).
+
+ObjectIntersectionOfPlus(x) :- ObjectIntersectionOf(x, [_, [_, [_, [_, [_, _]]]]]).
+
+ObjectUnionOf(as(node, AnonymousClassExpressionNode), expressions) :-
+    rdf(node, OWL_UNION_OF, list),
+    rdf(node, RDF_TYPE, OWL_CLASS),
+    match("_:.*", node),
+    rdfList(list, expressions).
+
+ObjectComplementOf(as(node, AnonymousClassExpressionNode), class) :-
+    rdf(node, OWL_COMPLEMENT_OF, class),
+    ClassExpression(class),
+    rdf(node, RDF_TYPE, OWL_CLASS),
+    match("_:.*", node).
+
+ObjectHasSelf(as(restr, AnonymousClassExpressionNode), p) :-
+    (rdf(restr, OWL_HAS_SELF, XSD_TRUE) ; rdf(restr, OWL_HAS_SELF, "true")),
+    rdf(restr, OWL_ON_PROPERTY, p),
+    (ObjectProperty(p) ; ObjectInverseOf(p, _)),
+    rdf(restr, RDF_TYPE, OWL_RESTRICTION),
+    match("_:.*", restr).
+
+ClassExpression(c) :-
+    Class(c);
+    ObjectSomeValuesFrom(c, _, _);
+    ObjectAllValuesFrom(c, _, _);
+    ObjectIntersectionOf(c, _);
+    ObjectUnionOf(c, _);
+    ObjectComplementOf(c, _);
+    ObjectHasSelf(c, _).
+
+// Property axioms
+
+ObjectInverseOf(as(p, AnonymousObjectPropertyExpressionNode), q) :-
+    rdf(p, OWL_INVERSE_OF, q),
+    match("_:.*", p),
+    ObjectProperty(q).
+
+ObjectPropertyDomain(p, c) :-
+    rdf(p, RDFS_DOMAIN, c),
+    ObjectProperty(p),
+    ClassExpression(c).
+
+ObjectPropertyRange(p, c) :-
+    rdf(p, RDFS_RANGE, c),
+    ObjectProperty(p),
+    ClassExpression(c).
+
+TransitiveObjectProperty(p) :- 
+    rdf(p, RDF_TYPE, OWL_TRANSITIVE_PROPERTY),
+    ObjectProperty(p).
+
+FunctionalObjectProperty(p) :-
+    rdf(p, RDF_TYPE, OWL_FUNCTIONAL_PROPERTY),
+    ObjectProperty(p).
+
+InverseFunctionalObjectProperty(p) :-
+    rdf(p, RDF_TYPE, OWL_INVERSE_FUNCTIONAL_PROPERTY),
+    ObjectProperty(p).
+
+IrreflexiveObjectProperty(p) :-
+    rdf(p, RDF_TYPE, OWL_IRREFLEXIVE_PROPERTY),
+    ObjectProperty(p).
+
+SymmetricObjectProperty(p) :-
+    rdf(p, RDF_TYPE, OWL_SYMMETRIC_PROPERTY),
+    ObjectProperty(p).
+
+AsymmetricObjectProperty(p) :-
+    rdf(p, RDF_TYPE, OWL_ASYMMETRIC_PROPERTY),
+    ObjectProperty(p).
+
+SubObjectPropertyOf(s, o) :- 
+    rdf(s, RDFS_SUBPROPERTY_OF, o),
+    ObjectProperty(s),
+    ObjectProperty(o).
+
+SubObjectPropertyChain(s, chain) :- 
+    rdf(s, OWL_PROPERTY_CHAIN_AXIOM, listNode),
+    ObjectProperty(s),
+    rdfList(listNode, chain).
+
+InverseObjectProperties(p, q) :-
+    rdf(p, OWL_INVERSE_OF, q),
+    ObjectProperty(p),
+    ObjectProperty(q).
+
+//InverseObjectProperties(p, q) :- ObjectInverseOf(p, q).
+
+DisjointObjectProperties(p, q) :-
+    rdf(p, OWL_PROPERTY_DISJOINT_WITH, q),
+    ObjectProperty(p),
+    ObjectProperty(q).
+
+DisjointObjectProperties(pi, pj) :- 
+    rdf(x, RDF_TYPE, OWL_ALL_DISJOINT_PROPERTIES),
+    rdf(x, OWL_MEMBERS, listNode),
+    listContains(listNode, pi),
+    listContains(listNode, pj),
+    ord(pi) < ord(pj),
+    ObjectProperty(pi),
+    ObjectProperty(pj).
+
+// Class axioms
+
+SubClassOf(s, o) :- 
+    rdf(s, RDFS_SUBCLASS_OF, o),
+    ClassExpression(s),
+    ClassExpression(o).
+
+EquivalentClasses(s, o) :-
+    rdf(s, OWL_EQUIVALENT_CLASS, o),
+    ClassExpression(s),
+    ClassExpression(o).
+
+DisjointClasses(c, d) :-
+    rdf(c, OWL_DISJOINT_WITH, d),
+    ClassExpression(c),
+    ClassExpression(d).
+
+DisjointClasses(ci, cj) :- 
+    rdf(x, RDF_TYPE, OWL_ALL_DISJOINT_CLASSES),
+    rdf(x, OWL_MEMBERS, listNode),
+    listContains(listNode, ci),
+    listContains(listNode, cj),
+    ord(ci) < ord(cj),
+    ClassExpression(ci),
+    ClassExpression(cj).
+
+.output listContains
+.output Class
+.output NamedIndividual
+.output ObjectProperty
+.output NamedEntity
+.output ClassExpression
+.output ObjectSomeValuesFrom
+.output ObjectAllValuesFrom
+.output ObjectIntersectionOf
+.output ObjectIntersectionOf2
+.output ObjectIntersectionOf3
+.output ObjectIntersectionOf4
+.output ObjectIntersectionOfPlus
+.output ObjectUnionOf
+.output ObjectComplementOf
+.output ObjectHasSelf
+.output ObjectInverseOf
+.output ObjectPropertyDomain
+.output ObjectPropertyRange
+.output TransitiveObjectProperty
+.output FunctionalObjectProperty
+.output InverseFunctionalObjectProperty
+.output IrreflexiveObjectProperty
+.output SymmetricObjectProperty
+.output AsymmetricObjectProperty
+.output SubObjectPropertyOf
+.output SubObjectPropertyChain
+.output InverseObjectProperties
+.output DisjointObjectProperties
+.output SubClassOf
+.output EquivalentClasses
+.output DisjointClasses

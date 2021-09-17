@@ -1,0 +1,75 @@
+/** OWL Datamodel
+
+This module is declarations only
+
+The intent is either that declarations are supplied directly OR inferred from RDF (see owl_from_rdf.dl)
+*/
+
+.type IRI <: symbol
+.type BlankNode <: symbol
+.type Literal <: symbol
+.type Node = IRI | BlankNode
+.type NodeOrLiteral = Node | Literal
+
+.decl rdf(s: Node, p: IRI, o: NodeOrLiteral)
+
+.type List = [
+    head : Node,
+    tail : List
+]
+
+.decl rdfList(node: Node, items: List)
+
+.decl listContains(x: Node, item: symbol)
+.decl listContainsRest(x: Node, tail: List)
+
+.type AnonymousEntityNode <: BlankNode
+.type NamedEntityNode <: IRI
+.type EntityNode = AnonymousEntityNode | NamedEntityNode
+
+.type NamedClassNode <: NamedEntityNode
+.type AnonymousClassExpressionNode <: AnonymousEntityNode
+.type ClassExpressionNode = NamedClassNode | AnonymousClassExpressionNode
+
+.type NamedIndividualNode <: NamedEntityNode
+.type AnonymousIndividualNode <: AnonymousEntityNode
+.type IndividualNode = NamedIndividualNode | AnonymousIndividualNode
+
+.type NamedObjectPropertyNode <: NamedEntityNode
+.type AnonymousObjectPropertyExpressionNode <: AnonymousEntityNode
+.type ObjectPropertyExpressionNode = NamedObjectPropertyNode | AnonymousObjectPropertyExpressionNode
+
+.decl Class(s: NamedClassNode)
+.decl NamedIndividual(s: NamedIndividualNode)
+.decl ObjectProperty(s: NamedObjectPropertyNode)
+.decl NamedEntity(s: NamedEntityNode)
+
+.decl ClassExpression(node: ClassExpressionNode)
+.decl ObjectSomeValuesFrom(restr: AnonymousClassExpressionNode, p: NamedObjectPropertyNode, v: ClassExpressionNode)
+.decl ObjectAllValuesFrom(restr: AnonymousClassExpressionNode, p: NamedObjectPropertyNode, v: ClassExpressionNode)
+.decl ObjectIntersectionOf(node: AnonymousClassExpressionNode, expressions: List)
+.decl ObjectIntersectionOf2(node: AnonymousClassExpressionNode, one: ClassExpressionNode, two: ClassExpressionNode)
+.decl ObjectIntersectionOf3(node: AnonymousClassExpressionNode, one: ClassExpressionNode, two: ClassExpressionNode, three: ClassExpressionNode)
+.decl ObjectIntersectionOf4(node: AnonymousClassExpressionNode, one: ClassExpressionNode, two: ClassExpressionNode, three: ClassExpressionNode, four: ClassExpressionNode)
+.decl ObjectIntersectionOfPlus(node: AnonymousClassExpressionNode)
+.decl ObjectUnionOf(node: AnonymousClassExpressionNode, expressions: List)
+.decl ObjectComplementOf(node: AnonymousClassExpressionNode, class: ClassExpressionNode)
+.decl ObjectHasSelf(restr: AnonymousClassExpressionNode, p: ObjectPropertyExpressionNode)
+
+.decl ObjectInverseOf(p: AnonymousObjectPropertyExpressionNode, q: NamedObjectPropertyNode)
+.decl ObjectPropertyDomain(p: NamedObjectPropertyNode, c: ClassExpressionNode)
+.decl ObjectPropertyRange(p: NamedObjectPropertyNode, c: ClassExpressionNode)
+.decl TransitiveObjectProperty(p: NamedObjectPropertyNode)
+.decl FunctionalObjectProperty(p: NamedObjectPropertyNode)
+.decl InverseFunctionalObjectProperty(p: NamedObjectPropertyNode)
+.decl IrreflexiveObjectProperty(p: NamedObjectPropertyNode)
+.decl SymmetricObjectProperty(p: NamedObjectPropertyNode)
+.decl AsymmetricObjectProperty(p: NamedObjectPropertyNode)
+.decl SubObjectPropertyOf(s: NamedObjectPropertyNode, o: NamedObjectPropertyNode)
+.decl SubObjectPropertyChain(s: NamedObjectPropertyNode, chain: List)
+.decl InverseObjectProperties(p: NamedObjectPropertyNode, q: NamedObjectPropertyNode)
+.decl DisjointObjectProperties(p: NamedObjectPropertyNode, q: NamedObjectPropertyNode)
+
+.decl SubClassOf(s: ClassExpressionNode, o: ClassExpressionNode)
+.decl EquivalentClasses(s: ClassExpressionNode, o: ClassExpressionNode)
+.decl DisjointClasses(c: ClassExpressionNode, d: ClassExpressionNode)
