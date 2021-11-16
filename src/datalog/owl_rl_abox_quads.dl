@@ -1,0 +1,180 @@
+#include "src/datalog/constants.dl"
+#include "src/datalog/owl_declarations.dl"
+
+.input Class(IO=file, filename="ontology/Class.csv")
+.input ObjectProperty(IO=file, filename="ontology/ObjectProperty.csv")
+.input ClassExpression(IO=file, filename="ontology/ClassExpression.csv")
+.input ObjectSomeValuesFrom(IO=file, filename="ontology/ObjectSomeValuesFrom.csv")
+.input ObjectAllValuesFrom(IO=file, filename="ontology/ObjectAllValuesFrom.csv")
+.input ObjectIntersectionOf(IO=file, filename="ontology/ObjectIntersectionOf.csv")
+.input ObjectIntersectionOf2(IO=file, filename="ontology/ObjectIntersectionOf2.csv")
+.input ObjectIntersectionOf3(IO=file, filename="ontology/ObjectIntersectionOf3.csv")
+.input ObjectIntersectionOf4(IO=file, filename="ontology/ObjectIntersectionOf4.csv")
+.input ObjectIntersectionOfPlus(IO=file, filename="ontology/ObjectIntersectionOfPlus.csv")
+.input ObjectUnionOf(IO=file, filename="ontology/ObjectUnionOf.csv")
+.input ObjectHasSelf(IO=file, filename="ontology/ObjectHasSelf.csv")
+.input ObjectComplementOf(IO=file, filename="ontology/ObjectHasSelf.csv")
+.input TransitiveObjectProperty(IO=file, filename="ontology/TransitiveObjectProperty.csv")
+.input FunctionalObjectProperty(IO=file, filename="ontology/FunctionalObjectProperty.csv")
+.input InverseFunctionalObjectProperty(IO=file, filename="ontology/InverseFunctionalObjectProperty.csv")
+.input IrreflexiveObjectProperty(IO=file, filename="ontology/IrreflexiveObjectProperty.csv")
+.input SymmetricObjectProperty(IO=file, filename="ontology/SymmetricObjectProperty.csv")
+.input AsymmetricObjectProperty(IO=file, filename="ontology/AsymmetricObjectProperty.csv")
+.input SubObjectPropertyOf(IO=file, filename="ontology/SubObjectPropertyOf.csv")
+.input SubObjectPropertyChain(IO=file, filename="ontology/SubObjectPropertyChain.csv")
+.input InverseObjectProperties(IO=file, filename="ontology/InverseObjectProperties.csv")
+.input DisjointObjectProperties(IO=file, filename="ontology/DisjointObjectProperties.csv")
+.input SubClassOf(IO=file, filename="ontology/SubClassOf.csv")
+.input EquivalentClasses(IO=file, filename="ontology/EquivalentClasses.csv")
+.input DisjointClasses(IO=file, filename="ontology/DisjointClasses.csv")
+.input ObjectPropertyDomain(IO=file, filename="ontology/ObjectPropertyDomain.csv")
+.input ObjectPropertyRange(IO=file, filename="ontology/ObjectPropertyRange.csv")
+
+.decl quad(s: Node, p: IRI, o: NodeOrLiteral, g: IRI)
+.decl asserted(s: Node, p: IRI, o: NodeOrLiteral, g: IRI)
+.input asserted(IO=file, filename="quad.facts")
+.decl inferred(s: Node, p: IRI, o: NodeOrLiteral, g: IRI)
+.output inferred
+
+g(s, p, o, g) :- asserted(s, p, o, g).
+inferred(s, p, o, g) :- quad(s, p, o, g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o).
+
+.decl ichain(individual: Node, intersection: AnonymousClassExpressionNode, remainingOperands: List, g: IRI)
+
+.decl Chain2(s: IRI, p1: IRI, p2: IRI)
+.decl Chain3(s: IRI, p1: IRI, p2: IRI, p3: IRI)
+.decl Chain4(s: IRI, p1: IRI, p2: IRI, p3: IRI, p4: IRI)
+
+Chain2(as(s, IRI), as(p1, IRI), as(p2, IRI)) :- SubObjectPropertyChain(s, [p1, [p2, nil]]).
+Chain3(as(s, IRI), as(p1, IRI), as(p2, IRI), as(p3, IRI)) :- SubObjectPropertyChain(s, [p1, [p2, [p3, nil]]]).
+Chain4(as(s, IRI), as(p1, IRI), as(p2, IRI), as(p3, IRI), as(p4, IRI)) :- SubObjectPropertyChain(s, [p1, [p2, [p3, [p4, nil]]]]).
+
+//prp-dom
+quad(?x, RDF_TYPE, ?c, g) :- ObjectPropertyDomain(?p, ?c), quad(?x, ?p, _, g).
+
+//prp-rng
+quad(as(?y, Node), RDF_TYPE, ?c, g) :- ObjectPropertyRange(?p, ?c), quad(_, ?p, ?y, g).
+
+//prp-fp
+quad(as(?y1, Node), OWL_SAME_AS, ?y2, g) :- FunctionalObjectProperty(?p), quad(?x, ?p, ?y1, g), quad(?x, ?p, ?y2, g).
+
+//prp-ifp
+quad(?x1, OWL_SAME_AS, ?x2, g) :- InverseFunctionalObjectProperty(?p), quad(?x1, ?p, ?y, g), quad(?x2, ?p, ?y, g).
+
+//prp-irp
+quad(?x, RDF_TYPE, OWL_NOTHING, g) :- IrreflexiveObjectProperty(?p), quad(?x, ?p, ?x, g).
+
+//prp-symp
+quad(as(?y, Node), ?p, ?x, g) :- SymmetricObjectProperty(?p), quad(?x, ?p, ?y, g).
+
+//prp-asyp
+quad(?x, RDF_TYPE, OWL_NOTHING, g), quad(?y, RDF_TYPE, OWL_NOTHING, g) :- 
+    AsymmetricObjectProperty(?p), quad(?x, ?p, ?y, g), quad(?y, ?p, ?x, g).
+
+//prp-trp
+quad(?x, ?p, ?z, g) :- TransitiveObjectProperty(?p), quad(?x, ?p, ?y, g), quad(?y, ?p, ?z, g).
+
+//prp-spo1
+quad(?x, ?p2, ?y, g) :- SubObjectPropertyOf(?p1, ?p2), quad(?x, ?p1, ?y, g).
+
+//prp-spo2
+quad(?x, ?p, ?z, g) :- Chain2(?p, ?p1, ?p2), quad(?x, ?p1, ?y, g), quad(?y, ?p2, ?z, g).
+
+quad(?w, ?p, ?z, g) :- Chain3(?p, ?p1, ?p2, ?p3), quad(?w, ?p1, ?x, g), quad(?x, ?p2, ?y, g), quad(?y, ?p3, ?z, g).
+
+quad(?v, ?p, ?z, g) :- Chain4(?p, ?p1, ?p2, ?p3, ?p4), quad(?v, ?p1, ?w, g), quad(?w, ?p2, ?x, g), quad(?x, ?p3, ?y, g), quad(?y, ?p4, ?z, g).
+
+/**
+TODO - equivalent properties
+//prp-eqp1
+rdf(?x, ?p2, ?y) :- equivalentProperties(?p1, ?p2), rdf(?x, ?p1, ?y).
+
+//prp-eqp2
+rdf(?x, ?p1, ?y) :- equivalentProperties(?p1, ?p2), rdf(?x, ?p2, ?y).
+**/
+
+//prp-pdw
+quad(?x, RDF_TYPE, OWL_NOTHING, g), quad(as(?y, IRI), RDF_TYPE, OWL_NOTHING, g) :- 
+    DisjointObjectProperties(?p1, ?p2), quad(?x, ?p1, ?y, g), quad(?x, ?p2, ?y, g).
+
+//prp-inv1
+quad(as(?y, IRI), ?p2, ?x, g) :- InverseObjectProperties(?p1, ?p2), quad(?x, ?p1, ?y, g).
+
+//prp-inv2
+quad(as(?y, IRI), ?p1, ?x, g) :- InverseObjectProperties(?p1, ?p2), quad(?x, ?p2, ?y, g).
+
+//prp-npa1
+quad(as(?i1, IRI), RDF_TYPE, OWL_NOTHING, g), quad(as(?i2, IRI), RDF_TYPE, OWL_NOTHING, g) :- 
+    quad(?x, OWL_SOURCE_INDIVIDUAL, ?i1, g), 
+    quad(?x, OWL_ASSERTION_PROPERTY, ?p, g),
+    quad(?x, OWL_TARGET_INDIVIDUAL, ?i2, g),
+    quad(?i1, ?p, ?i2, g).
+
+//prp-npa2
+quad(?i1, RDF_TYPE, OWL_NOTHING, g) :- 
+    quad(?x, OWL_SOURCE_INDIVIDUAL, ?i1, g), 
+    quad(?x, OWL_ASSERTION_PROPERTY, ?p, g),
+    quad(?x, OWL_TARGET_VALUE, ?lt, g),
+    quad(?i1, ?p, ?lt, g).
+
+//cls-int1
+quad(i, RDF_TYPE, x, g) :-
+    ObjectIntersectionOf2(x, one, two),
+    quad(i, RDF_TYPE, two, g),
+    quad(i, RDF_TYPE, one, g).
+
+quad(i, RDF_TYPE, x, g) :-
+    ObjectIntersectionOf3(x, one, two, three),
+    quad(i, RDF_TYPE, three, g),
+    quad(i, RDF_TYPE, two, g),
+    quad(i, RDF_TYPE, one, g).
+
+quad(i, RDF_TYPE, x, g) :- 
+    ObjectIntersectionOf4(x, one, two, three, four),
+    quad(i, RDF_TYPE, four, g),
+    quad(i, RDF_TYPE, three, g),
+    quad(i, RDF_TYPE, two, g),
+    quad(i, RDF_TYPE, one, g).
+
+ichain(i, x, rest, g) :-
+    ObjectIntersectionOfPlus(x),
+    ObjectIntersectionOf(x, [first, rest]),
+    quad(i, RDF_TYPE, first, g).
+
+ichain(i, x, rest, g) :- ichain(i, x, [next, rest], g), quad(i, RDF_TYPE, next, g).
+
+quad(i, RDF_TYPE, x, g) :- ichain(i, x, nil, g).
+
+//cls-com
+quad(?x, RDF_TYPE, OWL_NOTHING, g) :-
+    ObjectComplementOf(?c1, ?c2),
+    quad(?x, RDF_TYPE, ?c1, g),
+    quad(?x, RDF_TYPE, ?c2, g).
+
+//cls-svf1
+quad(?u, RDF_TYPE, ?x, g) :-
+    ObjectSomeValuesFrom(?x, ?p, ?y),
+    quad(?v, RDF_TYPE, ?y, g),
+    quad(?u, ?p, ?v, g).
+
+//cls-svf2
+quad(?u, RDF_TYPE, ?x, g) :-
+    ObjectSomeValuesFrom(?x, ?p, OWL_THING),
+    quad(?u, ?p, _, g).
+
+//cls-avf
+quad(as(?v, Node), RDF_TYPE, ?y, g) :-
+    ObjectAllValuesFrom(?x, ?p, ?y),
+    quad(?u, RDF_TYPE, ?x, g),
+    quad(?u, ?p, ?v, g).
+
+//cax-sco
+quad(?x, RDF_TYPE, ?d, g) :-
+    SubClassOf(?c, ?d),
+    quad(?x, RDF_TYPE, ?c, g).
+
+//cax-dw
+quad(?x, RDF_TYPE, OWL_NOTHING, g) :-
+    DisjointClasses(?c, ?d),
+    quad(?x, RDF_TYPE, ?c, g),
+    quad(?x, RDF_TYPE, ?d, g).
