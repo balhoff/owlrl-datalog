@@ -30,12 +30,12 @@
 .input ObjectPropertyDomain(IO=file, filename="ontology/ObjectPropertyDomain.csv")
 .input ObjectPropertyRange(IO=file, filename="ontology/ObjectPropertyRange.csv")
 
-.decl quad(s: Node, p: IRI, o: NodeOrLiteral, g: IRI) //brie
-.decl asserted(s: Node, p: IRI, o: NodeOrLiteral, g: IRI) //brie
+.decl quad(s: symbol, p: symbol, o: symbol, g: symbol) //brie
+.decl asserted(s: symbol, p: symbol, o: symbol, g: symbol) //brie
 .input asserted(IO=file, filename="quad.facts")
-.decl inferred(s: Node, p: IRI, o: NodeOrLiteral, g: IRI) //brie
+.decl inferred(s: symbol, p: symbol, o: symbol, g: symbol) //brie
 .output inferred
-.decl inconsistent(graph: IRI)
+.decl inconsistent(graph: symbol)
 .output inconsistent
 .printsize quad
 
@@ -44,24 +44,24 @@ inferred(s, p, o, g) :- quad(s, p, o, g), !inconsistent(g), !asserted(s, p, o, g
 
 inconsistent(g) :- quad(_, RDF_TYPE, OWL_NOTHING, g).
 
-.decl ichain(individual: Node, intersection: AnonymousClassExpressionNode, remainingOperands: List, g: IRI)
+.decl ichain(individual: symbol, intersection: symbol, remainingOperands: List, g: symbol)
 
-.decl Chain2(s: IRI, p1: IRI, p2: IRI)
-.decl Chain3(s: IRI, p1: IRI, p2: IRI, p3: IRI)
-.decl Chain4(s: IRI, p1: IRI, p2: IRI, p3: IRI, p4: IRI)
+.decl Chain2(s: symbol, p1: symbol, p2: symbol)
+.decl Chain3(s: symbol, p1: symbol, p2: symbol, p3: symbol)
+.decl Chain4(s: symbol, p1: symbol, p2: symbol, p3: symbol, p4: symbol)
 
-Chain2(as(s, IRI), as(p1, IRI), as(p2, IRI)) :- SubObjectPropertyChain(s, [p1, [p2, nil]]).
-Chain3(as(s, IRI), as(p1, IRI), as(p2, IRI), as(p3, IRI)) :- SubObjectPropertyChain(s, [p1, [p2, [p3, nil]]]).
-Chain4(as(s, IRI), as(p1, IRI), as(p2, IRI), as(p3, IRI), as(p4, IRI)) :- SubObjectPropertyChain(s, [p1, [p2, [p3, [p4, nil]]]]).
+Chain2(s, p1, p2) :- SubObjectPropertyChain(s, [p1, [p2, nil]]).
+Chain3(s, p1, p2, p3) :- SubObjectPropertyChain(s, [p1, [p2, [p3, nil]]]).
+Chain4(s, p1, p2, p3, p4) :- SubObjectPropertyChain(s, [p1, [p2, [p3, [p4, nil]]]]).
 
 //prp-dom
 quad(?x, RDF_TYPE, ?c, g) :- ObjectPropertyDomain(?p, ?c), quad(?x, ?p, _, g).
 
 //prp-rng
-quad(as(?y, Node), RDF_TYPE, ?c, g) :- ObjectPropertyRange(?p, ?c), quad(_, ?p, ?y, g).
+quad(?y, RDF_TYPE, ?c, g) :- ObjectPropertyRange(?p, ?c), quad(_, ?p, ?y, g).
 
 //prp-fp
-quad(as(?y1, Node), OWL_SAME_AS, ?y2, g) :- FunctionalObjectProperty(?p), quad(?x, ?p, ?y1, g), quad(?x, ?p, ?y2, g).
+quad(?y1, OWL_SAME_AS, ?y2, g) :- FunctionalObjectProperty(?p), quad(?x, ?p, ?y1, g), quad(?x, ?p, ?y2, g).
 
 //prp-ifp
 quad(?x1, OWL_SAME_AS, ?x2, g) :- InverseFunctionalObjectProperty(?p), quad(?x1, ?p, ?y, g), quad(?x2, ?p, ?y, g).
@@ -70,7 +70,7 @@ quad(?x1, OWL_SAME_AS, ?x2, g) :- InverseFunctionalObjectProperty(?p), quad(?x1,
 quad(?x, RDF_TYPE, OWL_NOTHING, g) :- IrreflexiveObjectProperty(?p), quad(?x, ?p, ?x, g).
 
 //prp-symp
-quad(as(?y, Node), ?p, ?x, g) :- SymmetricObjectProperty(?p), quad(?x, ?p, ?y, g).
+quad(?y, ?p, ?x, g) :- SymmetricObjectProperty(?p), quad(?x, ?p, ?y, g).
 
 //prp-asyp
 quad(?x, RDF_TYPE, OWL_NOTHING, g), quad(?y, RDF_TYPE, OWL_NOTHING, g) :- 
@@ -99,17 +99,17 @@ rdf(?x, ?p1, ?y) :- equivalentProperties(?p1, ?p2), rdf(?x, ?p2, ?y).
 **/
 
 //prp-pdw
-quad(?x, RDF_TYPE, OWL_NOTHING, g), quad(as(?y, IRI), RDF_TYPE, OWL_NOTHING, g) :- 
+quad(?x, RDF_TYPE, OWL_NOTHING, g), quad(?y, RDF_TYPE, OWL_NOTHING, g) :- 
     DisjointObjectProperties(?p1, ?p2), quad(?x, ?p1, ?y, g), quad(?x, ?p2, ?y, g).
 
 //prp-inv1
-quad(as(?y, IRI), ?p2, ?x, g) :- InverseObjectProperties(?p1, ?p2), quad(?x, ?p1, ?y, g).
+quad(?y, ?p2, ?x, g) :- InverseObjectProperties(?p1, ?p2), quad(?x, ?p1, ?y, g).
 
 //prp-inv2
-quad(as(?y, IRI), ?p1, ?x, g) :- InverseObjectProperties(?p1, ?p2), quad(?x, ?p2, ?y, g).
+quad(?y, ?p1, ?x, g) :- InverseObjectProperties(?p1, ?p2), quad(?x, ?p2, ?y, g).
 
 //prp-npa1
-quad(as(?i1, IRI), RDF_TYPE, OWL_NOTHING, g), quad(as(?i2, IRI), RDF_TYPE, OWL_NOTHING, g) :- 
+quad(?i1, RDF_TYPE, OWL_NOTHING, g), quad(?i2, RDF_TYPE, OWL_NOTHING, g) :- 
     quad(?x, OWL_SOURCE_INDIVIDUAL, ?i1, g), 
     quad(?x, OWL_ASSERTION_PROPERTY, ?p, g),
     quad(?x, OWL_TARGET_INDIVIDUAL, ?i2, g),
@@ -168,7 +168,7 @@ quad(?u, RDF_TYPE, ?x, g) :-
     quad(?u, ?p, _, g).
 
 //cls-avf
-quad(as(?v, Node), RDF_TYPE, ?y, g) :-
+quad(?v, RDF_TYPE, ?y, g) :-
     ObjectAllValuesFrom(?x, ?p, ?y),
     quad(?u, RDF_TYPE, ?x, g),
     quad(?u, ?p, ?v, g).
@@ -184,3 +184,5 @@ quad(?x, RDF_TYPE, OWL_NOTHING, g) :-
     DisjointClasses(?c, ?d),
     quad(?x, RDF_TYPE, ?c, g),
     quad(?x, RDF_TYPE, ?d, g).
+
+#include "src/datalog/swrl.dl"
