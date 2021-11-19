@@ -30,14 +30,19 @@
 .input ObjectPropertyDomain(IO=file, filename="ontology/ObjectPropertyDomain.csv")
 .input ObjectPropertyRange(IO=file, filename="ontology/ObjectPropertyRange.csv")
 
-.decl quad(s: Node, p: IRI, o: NodeOrLiteral, g: IRI)
-.decl asserted(s: Node, p: IRI, o: NodeOrLiteral, g: IRI)
+.decl quad(s: Node, p: IRI, o: NodeOrLiteral, g: IRI) //brie
+.decl asserted(s: Node, p: IRI, o: NodeOrLiteral, g: IRI) //brie
 .input asserted(IO=file, filename="quad.facts")
-.decl inferred(s: Node, p: IRI, o: NodeOrLiteral, g: IRI)
+.decl inferred(s: Node, p: IRI, o: NodeOrLiteral, g: IRI) //brie
 .output inferred
+.decl inconsistent(graph: IRI)
+.output inconsistent
+.printsize quad
 
-g(s, p, o, g) :- asserted(s, p, o, g).
-inferred(s, p, o, g) :- quad(s, p, o, g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o).
+quad(s, p, o, g) :- asserted(s, p, o, g).
+inferred(s, p, o, g) :- quad(s, p, o, g), !inconsistent(g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o).
+
+inconsistent(g) :- quad(_, RDF_TYPE, OWL_NOTHING, g).
 
 .decl ichain(individual: Node, intersection: AnonymousClassExpressionNode, remainingOperands: List, g: IRI)
 
@@ -153,9 +158,9 @@ quad(?x, RDF_TYPE, OWL_NOTHING, g) :-
 
 //cls-svf1
 quad(?u, RDF_TYPE, ?x, g) :-
-    ObjectSomeValuesFrom(?x, ?p, ?y),
+    quad(?u, ?p, ?v, g),
     quad(?v, RDF_TYPE, ?y, g),
-    quad(?u, ?p, ?v, g).
+    ObjectSomeValuesFrom(?x, ?p, ?y).
 
 //cls-svf2
 quad(?u, RDF_TYPE, ?x, g) :-
@@ -170,8 +175,9 @@ quad(as(?v, Node), RDF_TYPE, ?y, g) :-
 
 //cax-sco
 quad(?x, RDF_TYPE, ?d, g) :-
-    SubClassOf(?c, ?d),
-    quad(?x, RDF_TYPE, ?c, g).
+    quad(?x, RDF_TYPE, ?c, g),
+    SubClassOf(?c, ?d).
+    
 
 //cax-dw
 quad(?x, RDF_TYPE, OWL_NOTHING, g) :-
