@@ -1,5 +1,4 @@
-// scala 2.13.3
-// ammonite 2.3.8
+// using scala 2.13
 
 import $ivy.`org.geneontology::owl-to-rules:0.3.7`
 
@@ -18,20 +17,9 @@ import org.apache.jena.graph.Node_Blank
 import org.apache.jena.graph.Node_Literal
 import scala.jdk.CollectionConverters._
 import scala.util.Using
+import java.io.File
 import java.io.PrintWriter
 import java.nio.charset.StandardCharsets
-
-@main
-def main(inputFile: os.Path, outputFile: os.Path): Unit = {
-  val manager = OWLManager.createOWLOntologyManager()
-  val inputOntology = manager.loadOntology(IRI.create(inputFile.toIO))
-  val swrlRules = inputOntology.getAxioms(AxiomType.SWRL_RULE).asScala.to(Set)
-  val jenaRules = swrlRules.flatMap(OWLtoRules.translateAxiom)
-  val souffleRules = jenaRules.flatMap(jenaToSouffle)
-  Using.resource(new PrintWriter(outputFile.toIO, StandardCharsets.UTF_8)) { writer =>
-    souffleRules.foreach(writer.println)
-  }
-}
 
 def jenaToSouffle(rule: Rule): Option[String] =
   for {
@@ -64,4 +52,15 @@ implicit class ListExtensions[T](val self: List[Option[T]]) extends AnyVal {
 
   def sequence: Option[List[T]] = if (self.contains(None)) None else Some(self.flatten)
 
+}
+
+val inputFile = new File(args(0))
+val outputFile = new File(args(1))
+val manager = OWLManager.createOWLOntologyManager()
+val inputOntology = manager.loadOntology(IRI.create(inputFile))
+val swrlRules = inputOntology.getAxioms(AxiomType.SWRL_RULE).asScala.to(Set)
+val jenaRules = swrlRules.flatMap(OWLtoRules.translateAxiom)
+val souffleRules = jenaRules.flatMap(jenaToSouffle)
+Using.resource(new PrintWriter(outputFile, StandardCharsets.UTF_8)) { writer =>
+  souffleRules.foreach(writer.println)
 }
