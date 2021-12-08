@@ -40,7 +40,7 @@
 .printsize quad
 
 quad(s, p, o, g) :- asserted(s, p, o, g).
-inferred(s, p, o, g) :- quad(s, p, o, g), !inconsistent(g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o).
+inferred(s, p, o, cat(substr(g, 0, strlen(g)-2), "#inferred>")) :- quad(s, p, o, g), !inconsistent(g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o).
 
 inconsistent(g) :- quad(_, RDF_TYPE, OWL_NOTHING, g).
 

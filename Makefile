@@ -10,8 +10,8 @@ go-lego-reacto.owl:
 ontology.nt: ontologies-merged.ttl
 	riot --output=ntriples $< >$@
 
-ontology.facts: ontology.nt
-	sed 's/ /\t/' <$< | sed 's/ /\t/' | sed 's/ \.$$//' >$@
+#ontology.facts: ontology.nt
+#	sed 's/ /\t/' <$< | sed 's/ /\t/' | sed 's/ \.$$//' >$@
 
 ontology: bin/owl_from_rdf ontology.facts
 	mkdir -p $@ && ./bin/owl_from_rdf -D $@ && touch ontology
@@ -25,5 +25,8 @@ model.nt: GO-CAMs.ttl
 rdf.facts: model.nt
 	sed 's/ /\t/' <$< | sed 's/ /\t/' | sed 's/ \.$$//' >$@
 
-inferred.csv: rdf.facts ontology bin/owl_rl_abox
-	time ./bin/owl_rl_abox
+#inferred.csv: rdf.facts ontology bin/owl_rl_abox
+#	time ./bin/owl_rl_abox
+
+inferred.csv: quad.facts ontology bin/owl_rl_abox_quads
+	time ./bin/owl_rl_abox_quads
