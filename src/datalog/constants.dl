@@ -43,3 +43,4 @@ Common vocabulary IRIs
 #define OWL_TARGET_INDIVIDUAL "<http://www.w3.org/2002/07/owl#targetIndividual>"
 #define OWL_TARGET_VALUE "<http://www.w3.org/2002/07/owl#targetValue>"
 #define XSD_TRUE "\"true\"^^<http://www.w3.org/2001/XMLSchema#boolean>"
+#define SESAME_DIRECT_TYPE "<http://www.openrdf.org/schema/sesame#directType>"

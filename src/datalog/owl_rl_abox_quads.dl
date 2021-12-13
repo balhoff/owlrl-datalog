@@ -34,6 +34,8 @@
 .decl asserted(s: symbol, p: symbol, o: symbol, g: symbol) //brie
 .input asserted(IO=file, filename="quad.facts")
 .decl inferred(s: symbol, p: symbol, o: symbol, g: symbol) //brie
+.decl indirect_type(i: symbol, c: symbol, g: symbol)
+.decl direct_type(i: symbol, c: symbol, g: symbol)
 .output inferred
 .decl inconsistent(graph: symbol)
 .output inconsistent
@@ -41,6 +43,7 @@
 
 quad(s, p, o, g) :- asserted(s, p, o, g).
 inferred(s, p, o, cat(substr(g, 0, strlen(g)-2), "#inferred>")) :- quad(s, p, o, g), !inconsistent(g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o).
+inferred(i, SESAME_DIRECT_TYPE, c, cat(substr(g, 0, strlen(g)-2), "#inferred>")) :- direct_type(i, c, g), match("<.*>", i).
 
 inconsistent(g) :- quad(_, RDF_TYPE, OWL_NOTHING, g).
 
@@ -184,5 +187,17 @@ quad(?x, RDF_TYPE, OWL_NOTHING, g) :-
     DisjointClasses(?c, ?d),
     quad(?x, RDF_TYPE, ?c, g),
     quad(?x, RDF_TYPE, ?d, g).
+
+indirect_type(i, d, g) :-
+    quad(i, RDF_TYPE, d, g),
+    match("<.*>", d),
+    SubClassOf(c, d),
+    match("<.*>", c),
+    quad(i, RDF_TYPE, c, g).
+
+direct_type(i, c, g) :-
+    quad(i, RDF_TYPE, c, g),
+    match("<.*>", c),
+    !indirect_type(i, c, g).
 
 #include "src/datalog/swrl.dl"
