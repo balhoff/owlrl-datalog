@@ -34,6 +34,7 @@
 .decl asserted(s: symbol, p: symbol, o: symbol, g: symbol) //brie
 .input asserted(IO=file, filename="quad.facts")
 .decl inferred(s: symbol, p: symbol, o: symbol, g: symbol) //brie
+.decl inferred_graph(inferred: symbol, asserted: symbol)
 .decl type(i: symbol, c: symbol, g: symbol)
 .decl indirect_type(i: symbol, c: symbol, g: symbol)
 .decl direct_type(i: symbol, c: symbol, g: symbol)
@@ -43,8 +44,10 @@
 .printsize quad
 
 quad(s, p, o, g) :- asserted(s, p, o, g).
-inferred(s, p, o, cat(substr(g, 0, strlen(g)-2), "#inferred>")) :- quad(s, p, o, g), !inconsistent(g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o).
-inferred(i, SESAME_DIRECT_TYPE, c, cat(substr(g, 0, strlen(g)-2), "#inferred>")) :- direct_type(i, c, g), match("<.*>", i).
+inferred_graph(cat(substr(ag, 0, strlen(ag)-2), "#inferred>"), ag) :- asserted(_, _, _, ag).
+quad(ig, "<http://www.w3.org/ns/prov#wasDerivedFrom>", ag, ag) :- inferred_graph(ig, ag).
+inferred(s, p, o, ig) :- quad(s, p, o, g), !inconsistent(g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o), inferred_graph(ig, g).
+inferred(i, SESAME_DIRECT_TYPE, c, ig) :- direct_type(i, c, g), match("<.*>", i), inferred_graph(ig, g).
 
 inconsistent(g) :- quad(_, RDF_TYPE, OWL_NOTHING, g).
 
