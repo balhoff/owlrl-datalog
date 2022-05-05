@@ -2,7 +2,7 @@ SRC=src/datalog
 
 bin/%: $(SRC)/%.dl
 	mkdir -p bin
-	souffle -c $< -o $@
+	souffle -o $@ $<
 
 go-lego-reacto.owl:
 	curl -L -O 'http://purl.obolibrary.org/obo/go/extensions/go-lego-reacto.owl'
