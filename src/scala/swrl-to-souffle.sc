@@ -1,6 +1,5 @@
-// using scala 2.13
-
-import $ivy.`org.geneontology::owl-to-rules:0.3.7`
+//> using scala "2.13"
+//> using dep "org.geneontology::owl-to-rules:0.3.7"
 
 import org.geneontology.jena.OWLtoRules
 import org.semanticweb.owlapi.apibinding.OWLManager
