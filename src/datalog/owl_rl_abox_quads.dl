@@ -44,7 +44,7 @@
 .printsize quad
 
 quad(s, p, o, g) :- asserted(s, p, o, g).
-inferred_graph(cat(substr(ag, 0, strlen(ag)-2), "#inferred>"), ag) :- asserted(_, _, _, ag).
+inferred_graph(cat(substr(ag, 0, strlen(ag)-1), "#inferred>"), ag) :- asserted(_, _, _, ag).
 inferred(ig, "<http://www.w3.org/ns/prov#wasDerivedFrom>", ag, ig) :- inferred_graph(ig, ag).
 inferred(s, p, o, ig) :- quad(s, p, o, g), !inconsistent(g), !asserted(s, p, o, g), match("<.*>", s), match("<.*>", o), inferred_graph(ig, g).
 inferred(i, SESAME_DIRECT_TYPE, c, ig) :- direct_type(i, c, g), match("<.*>", i), inferred_graph(ig, g).
